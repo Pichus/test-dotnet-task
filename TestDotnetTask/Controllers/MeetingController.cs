@@ -61,7 +61,7 @@ public class MeetingController : ControllerBase
         var timeBetweenEarliestStartAndLatestEnd = request.LatestEnd - request.EarliestStart;
 
         var durationFitsInSpecifiedInterval =
-            request.DurationMinutes < timeBetweenEarliestStartAndLatestEnd.Duration().Minutes;
+            request.DurationMinutes < timeBetweenEarliestStartAndLatestEnd.Duration().TotalMinutes;
 
         if (!durationFitsInSpecifiedInterval)
             return Result.Failure(new Error("Duration exceeds the time between earliest start and latest end."));
