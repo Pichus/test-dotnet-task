@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TestDotnetTask.Database;
+using TestDotnetTask.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,8 @@ builder.Services.AddDbContext<TestDotnetTaskContext>(
 builder.Services.AddControllers();
 
 builder.Services.AddOpenApiDocument();
+
+builder.Services.AddScoped<IMeetingService, MeetingService>();
 
 var app = builder.Build();
 
