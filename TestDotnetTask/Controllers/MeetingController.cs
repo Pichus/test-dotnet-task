@@ -20,11 +20,25 @@ public class MeetingController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateMeeting(CreateMeetingRequest request)
     {
-        var meeetingValidationResult = IsCreateMeetingRequestValid(request);
+        var validateMeetingResult = IsCreateMeetingRequestValid(request);
 
-        if (!meeetingValidationResult.IsSuccess) return BadRequest(meeetingValidationResult.Error);
-        
-        
+        if (!validateMeetingResult.IsSuccess) return BadRequest(validateMeetingResult.Error);
+
+        var createMeetingResult = await _meetingService.CreateMeetingIfPossible(request.ParticipantIds,
+            new MeetingTimeRange(request.EarliestStart, request.LatestEnd), request.DurationMinutes);
+
+        if (!createMeetingResult.IsSuccess) return BadRequest(createMeetingResult.Error);
+
+        var meeting = createMeetingResult.Value;
+
+        var response = new CreateMeetingResponse
+        {
+            Id = meeting!.Id,
+            StartTime = meeting!.StartTime,
+            EndTime = meeting!.EndTime
+        };
+
+        return CreatedAtAction(nameof(CreateMeeting), response);
     }
 
     private Result IsCreateMeetingRequestValid(CreateMeetingRequest request)
