@@ -21,15 +21,14 @@ public class MeetingService : IMeetingService
     {
         var meetings = await GetUserMeetingsInSpecifiedRange(userIds, desiredRange);
 
-        var timeRangeForNewMeeting = new MeetingTimeRange();
-
         var findTimeRangeForNewMeetingResult =
             FindTimeRangeForNewMeeting(meetings, desiredRange, newMeetingDurationMinutes);
 
         if (!findTimeRangeForNewMeetingResult.IsSuccess)
             return Result<Meeting>.Failure(findTimeRangeForNewMeetingResult.Error);
 
-
+        var timeRangeForNewMeeting = findTimeRangeForNewMeetingResult.Value;
+        
         var getUsersResult = await GetUsersByIds(userIds);
 
         if (!getUsersResult.IsSuccess) return Result<Meeting>.Failure(getUsersResult.Error);
@@ -38,8 +37,8 @@ public class MeetingService : IMeetingService
 
         var meeting = new Meeting
         {
-            StartTime = timeRangeForNewMeeting.Start,
-            EndTime = timeRangeForNewMeeting.End,
+            StartTime = timeRangeForNewMeeting!.Start,
+            EndTime = timeRangeForNewMeeting!.End,
             Users = users!
         };
 
@@ -97,7 +96,7 @@ public class MeetingService : IMeetingService
 
             if (isDesiredMeetingTimeRangeExceeded) break;
 
-            if (meeting.Start > previousMeetingEndTime)
+            if (meeting.Start >= previousMeetingEndTime)
             {
                 var minutesBetweenPreviousMeetingEndTimeAndCurrentMeetingStart = (int)Math.Floor(
                     (meeting.Start - previousMeetingEndTime).Duration().TotalMinutes);
