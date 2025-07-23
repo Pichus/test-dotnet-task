@@ -51,8 +51,24 @@ public class UserController : ControllerBase
     }
 
     [HttpGet("{id}/meetings")]
-    public async Task GetUserMeetings(int id)
+    public async Task<ActionResult<IEnumerable<GetUserMeetingResponse>>> GetUserMeetings(int id)
     {
-        
+        var user = await _context.Users
+            .Include(user1 => user1.Meetings)
+            .FirstOrDefaultAsync(user1 => user1.Id == id);
+
+        if (user is null)
+        {
+            return NotFound($"user with id {id} does not exist");
+        }
+
+        var userMeetings = user.Meetings.Select(meeting => new GetUserMeetingResponse
+        {
+            Id = meeting.Id,
+            StartTime = meeting.StartTime,
+            EndTime = meeting.EndTime
+        }).ToList();
+
+        return userMeetings;
     }
 }
