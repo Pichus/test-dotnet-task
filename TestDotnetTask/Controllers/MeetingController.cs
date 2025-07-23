@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using TestDotnetTask.Dtos;
+using TestDotnetTask.Errors;
+using TestDotnetTask.Results;
+using TestDotnetTask.Services;
 
 namespace TestDotnetTask.Controllers;
 
@@ -7,21 +10,29 @@ namespace TestDotnetTask.Controllers;
 [ApiController]
 public class MeetingController : ControllerBase
 {
-    [HttpPost]
-    public async Task CreateMeeting(CreateMeetingRequest request)
+    private readonly IMeetingService _meetingService;
+
+    public MeetingController(IMeetingService meetingService)
     {
+        _meetingService = meetingService;
     }
 
-    private MeetingValidationResult IsCreateMeetingRequestValid(CreateMeetingRequest request)
+    [HttpPost]
+    public async Task<IActionResult> CreateMeeting(CreateMeetingRequest request)
     {
-        var result = new MeetingValidationResult();
+        var meeetingValidationResult = IsCreateMeetingRequestValid(request);
+
+        if (!meeetingValidationResult.IsSuccess) return BadRequest(meeetingValidationResult.Error);
         
+        
+    }
+
+    private Result IsCreateMeetingRequestValid(CreateMeetingRequest request)
+    {
         var isLatestEndLaterThanEarliestStart = request.LatestEnd > request.EarliestStart;
 
         if (!isLatestEndLaterThanEarliestStart)
-        {
-            result.Errors.Add("Latest end time must be after earliest start time");
-        }
+            return Result.Failure(new Error("Latest end time must be after earliest start time"));
 
         const int businessHoursStartHour = 9;
         const int businessHoursEndHour = 17;
@@ -31,9 +42,7 @@ public class MeetingController : ControllerBase
             request.LatestEnd.TimeOfDay <= TimeSpan.FromHours(businessHoursEndHour);
 
         if (!isMeetingInBusinessHours)
-        {
-            result.Errors.Add("Meeting must be scheduled between 9:00 AM and 5:00 PM.");
-        }
+            return Result.Failure(new Error("Meeting must be scheduled between 9:00 AM and 5:00 PM."));
 
         var timeBetweenEarliestStartAndLatestEnd = request.LatestEnd - request.EarliestStart;
 
@@ -41,11 +50,8 @@ public class MeetingController : ControllerBase
             request.DurationMinutes < timeBetweenEarliestStartAndLatestEnd.Duration().Minutes;
 
         if (!durationFitsInSpecifiedInterval)
-        {
-            result.Errors.Add("Duration exceeds the time between earliest start and latest end.");
-        }
+            return Result.Failure(new Error("Duration exceeds the time between earliest start and latest end."));
 
-        result.IsValid = result.Errors.Count == 0;
-        return result;
+        return Result.Success();
     }
 }
