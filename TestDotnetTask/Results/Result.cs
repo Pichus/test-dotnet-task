@@ -4,12 +4,12 @@ namespace TestDotnetTask.Results;
 
 public class Result
 {
-    private Result()
+    protected Result()
     {
         IsSuccess = true;
     }
 
-    private Result(Error error)
+    protected Result(Error error)
     {
         IsSuccess = false;
         Error = error;
