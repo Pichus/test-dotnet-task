@@ -1,6 +1,11 @@
 ﻿services:
   testdotnettask:
+    container_name: aspnet-test-task
     image: testdotnettask
     build:
       context: .
       dockerfile: TestDotnetTask/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    ports:
+      - "8080:8080"
