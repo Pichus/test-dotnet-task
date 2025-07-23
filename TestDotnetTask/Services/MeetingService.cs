@@ -19,6 +19,12 @@ public class MeetingService : IMeetingService
     public async Task<Result<Meeting>> CreateMeetingIfPossible(List<int> userIds, MeetingTimeRange desiredRange,
         int newMeetingDurationMinutes)
     {
+        var getUsersResult = await GetUsersByIds(userIds);
+
+        if (!getUsersResult.IsSuccess) return Result<Meeting>.Failure(getUsersResult.Error);
+
+        var users = getUsersResult.Value;
+        
         var meetings = await GetUserMeetingsInSpecifiedRange(userIds, desiredRange);
 
         var findTimeRangeForNewMeetingResult =
@@ -28,12 +34,6 @@ public class MeetingService : IMeetingService
             return Result<Meeting>.Failure(findTimeRangeForNewMeetingResult.Error);
 
         var timeRangeForNewMeeting = findTimeRangeForNewMeetingResult.Value;
-        
-        var getUsersResult = await GetUsersByIds(userIds);
-
-        if (!getUsersResult.IsSuccess) return Result<Meeting>.Failure(getUsersResult.Error);
-
-        var users = getUsersResult.Value;
 
         var meeting = new Meeting
         {
@@ -70,7 +70,7 @@ public class MeetingService : IMeetingService
         MeetingTimeRange desiredRange)
     {
         var meetings = await _context.Meetings
-            .Where(meeting => meeting.StartTime >= desiredRange.Start && meeting.EndTime <= desiredRange.End)
+            .Where(meeting => meeting.EndTime >= desiredRange.Start && meeting.StartTime <= desiredRange.End)
             .Where(meeting => meeting.Users.Any(user => userIds.Contains(user.Id)))
             .OrderBy(meeting => meeting.StartTime)
             .ThenBy(meeting => meeting.EndTime)
