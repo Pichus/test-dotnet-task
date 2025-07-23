@@ -14,13 +14,22 @@ public class MeetingController : ControllerBase
 
     private bool IsCreateMeetingRequestValid(CreateMeetingRequest request)
     {
+        var isLatestEndLaterThanEarliestStart = request.LatestEnd > request.EarliestStart;
+
         const int businessHoursStartHour = 9;
         const int businessHoursEndHour = 17;
-        
-        bool isMeetingInBusinessHours = 
+
+        var isMeetingInBusinessHours =
             request.EarliestStart.TimeOfDay >= TimeSpan.FromHours(businessHoursStartHour) &&
             request.LatestEnd.TimeOfDay <= TimeSpan.FromHours(businessHoursEndHour);
 
-        return isMeetingInBusinessHours;
+        var timeBetweenEarliestStartAndLatestEnd = request.LatestEnd - request.EarliestStart;
+
+        var durationFitsInSpecifiedInterval = request.DurationMinutes < timeBetweenEarliestStartAndLatestEnd.Minutes;
+
+        var requestValid = isLatestEndLaterThanEarliestStart && isMeetingInBusinessHours &&
+                           durationFitsInSpecifiedInterval;
+
+        return requestValid;
     }
 }
