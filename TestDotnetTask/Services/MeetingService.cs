@@ -16,22 +16,24 @@ public class MeetingService : IMeetingService
         _context = context;
     }
 
-    public async Task<Result<Meeting>> CreateMeetingIfPossible(List<int> userIds, MeetingTimeRange desiredRange,
+    public async Task<Result<Meeting, List<int>>> CreateMeetingIfPossible(List<int> userIds,
+        MeetingTimeRange desiredRange,
         int newMeetingDurationMinutes)
     {
         var getUsersResult = await GetUsersByIds(userIds);
 
-        if (!getUsersResult.IsSuccess) return Result<Meeting>.Failure(getUsersResult.Error);
+        if (!getUsersResult.IsSuccess)
+            return Result<Meeting, List<int>>.Failure(getUsersResult.Error, getUsersResult.FailureValue!);
 
         var users = getUsersResult.Value;
-        
+
         var meetings = await GetUserMeetingsInSpecifiedRange(userIds, desiredRange);
 
         var findTimeRangeForNewMeetingResult =
             FindTimeRangeForNewMeeting(meetings, desiredRange, newMeetingDurationMinutes);
 
         if (!findTimeRangeForNewMeetingResult.IsSuccess)
-            return Result<Meeting>.Failure(findTimeRangeForNewMeetingResult.Error);
+            return Result<Meeting, List<int>>.Failure(findTimeRangeForNewMeetingResult.Error);
 
         var timeRangeForNewMeeting = findTimeRangeForNewMeetingResult.Value;
 
@@ -46,7 +48,7 @@ public class MeetingService : IMeetingService
 
         await _context.SaveChangesAsync();
 
-        return Result<Meeting>.Success(meeting);
+        return Result<Meeting, List<int>>.Success(meeting);
     }
 
     private async Task<Result<List<User>, List<int>>> GetUsersByIds(List<int> userIds)
@@ -58,6 +60,8 @@ public class MeetingService : IMeetingService
         var existingIds = users.Select(user => user.Id);
 
         var missingUsers = userIds.Except(existingIds).ToList();
+
+        foreach (var pluh in missingUsers) Console.WriteLine(pluh);
 
         if (missingUsers.Any())
             return Result<List<User>, List<int>>.Failure(

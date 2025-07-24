@@ -18,12 +18,18 @@ public class Result<TSuccessValue, TFailureValue> : Result<TSuccessValue>
 
     protected Result(Error error, TFailureValue failureValue)
     {
+        IsSuccess = false;
         Error = error;
         FailureValue = failureValue;
     }
 
     public TFailureValue? FailureValue { get; set; }
 
+    public static Result<TSuccessValue, TFailureValue> Failure(Error error)
+    {
+        return new Result<TSuccessValue, TFailureValue>(error);
+    }
+    
     public static Result<TSuccessValue, TFailureValue> Failure(Error error, TFailureValue failureValue)
     {
         return new Result<TSuccessValue, TFailureValue>(error, failureValue);
