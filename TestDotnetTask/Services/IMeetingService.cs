@@ -6,6 +6,6 @@ namespace TestDotnetTask.Services;
 
 public interface IMeetingService
 {
-    Task<Result<Meeting, List<int>>> CreateMeetingIfPossible(List<int> userIds, MeetingTimeRange desiredRange,
+    Task<Result<Meeting>> CreateMeetingIfPossible(List<int> userIds, MeetingTimeRange desiredRange,
         int newMeetingDurationMinutes);
 }

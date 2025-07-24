@@ -16,14 +16,14 @@ public class MeetingService : IMeetingService
         _context = context;
     }
 
-    public async Task<Result<Meeting, List<int>>> CreateMeetingIfPossible(List<int> userIds,
+    public async Task<Result<Meeting>> CreateMeetingIfPossible(List<int> userIds,
         MeetingTimeRange desiredRange,
         int newMeetingDurationMinutes)
     {
         var getUsersResult = await GetUsersByIds(userIds);
 
         if (!getUsersResult.IsSuccess)
-            return Result<Meeting, List<int>>.Failure(getUsersResult.Error, getUsersResult.FailureValue!);
+            return Result<Meeting>.Failure(getUsersResult.Error);
 
         var users = getUsersResult.Value;
 
@@ -33,7 +33,7 @@ public class MeetingService : IMeetingService
             FindTimeRangeForNewMeeting(meetings, desiredRange, newMeetingDurationMinutes);
 
         if (!findTimeRangeForNewMeetingResult.IsSuccess)
-            return Result<Meeting, List<int>>.Failure(findTimeRangeForNewMeetingResult.Error);
+            return Result<Meeting>.Failure(findTimeRangeForNewMeetingResult.Error);
 
         var timeRangeForNewMeeting = findTimeRangeForNewMeetingResult.Value;
 
@@ -48,10 +48,10 @@ public class MeetingService : IMeetingService
 
         await _context.SaveChangesAsync();
 
-        return Result<Meeting, List<int>>.Success(meeting);
+        return Result<Meeting>.Success(meeting);
     }
 
-    private async Task<Result<List<User>, List<int>>> GetUsersByIds(List<int> userIds)
+    private async Task<Result<List<User>>> GetUsersByIds(List<int> userIds)
     {
         var users = await _context.Users
             .Where(u => userIds.Contains(u.Id))
@@ -61,13 +61,13 @@ public class MeetingService : IMeetingService
 
         var missingUsers = userIds.Except(existingIds).ToList();
 
-        foreach (var pluh in missingUsers) Console.WriteLine(pluh);
+        var missingUsersString = string.Join( ",", missingUsers.ToArray() );
 
         if (missingUsers.Any())
-            return Result<List<User>, List<int>>.Failure(
-                new Error("users with these ids do not exist"), missingUsers);
+            return Result<List<User>>.Failure(
+                new Error($"users with these ids do not exist: {missingUsersString}"));
 
-        return Result<List<User>, List<int>>.Success(users);
+        return Result<List<User>>.Success(users);
     }
 
     private async Task<List<MeetingTimeRange>> GetUserMeetingsInSpecifiedRange(ICollection<int> userIds,
