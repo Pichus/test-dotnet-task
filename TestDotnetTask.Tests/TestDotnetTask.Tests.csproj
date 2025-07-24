@@ -18,4 +18,12 @@
         <Using Include="Xunit"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\TestDotnetTask\TestDotnetTask.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Fixtures\" />
+    </ItemGroup>
+
 </Project>
