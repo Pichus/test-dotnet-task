@@ -32,10 +32,13 @@ public class MeetingController : ControllerBase
         {
             if (createMeetingResult.Error is UserIdsNotFoundError error)
             {
-                return NotFound(new {
-                    error.Message,
-                    error.NotFoundUserIds
-                });
+                var notFoundResponse = new CreateMeetingUsersNotFoundResponse
+                {
+                    Message = error.Message,
+                    NotFoundUserIds = error.NotFoundUserIds
+                };
+                
+                return NotFound(notFoundResponse);
             }
             return BadRequest(createMeetingResult.Error);
         }
