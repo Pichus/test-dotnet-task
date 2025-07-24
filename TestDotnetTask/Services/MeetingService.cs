@@ -10,9 +10,9 @@ namespace TestDotnetTask.Services;
 public class MeetingService : IMeetingService
 {
     private readonly TestDotnetTaskContext _context;
-    private readonly MeetingSchedulerService _meetingScheduler;
+    private readonly IMeetingSchedulerService _meetingScheduler;
 
-    public MeetingService(TestDotnetTaskContext context, MeetingSchedulerService meetingScheduler)
+    public MeetingService(TestDotnetTaskContext context, IMeetingSchedulerService meetingScheduler)
     {
         _context = context;
         _meetingScheduler = meetingScheduler;
