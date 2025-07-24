@@ -10,10 +10,12 @@ namespace TestDotnetTask.Services;
 public class MeetingService : IMeetingService
 {
     private readonly TestDotnetTaskContext _context;
+    private readonly MeetingSchedulerService _meetingScheduler;
 
-    public MeetingService(TestDotnetTaskContext context)
+    public MeetingService(TestDotnetTaskContext context, MeetingSchedulerService meetingScheduler)
     {
         _context = context;
+        _meetingScheduler = meetingScheduler;
     }
 
     public async Task<Result<Meeting>> CreateMeetingIfPossible(List<int> userIds,
@@ -30,7 +32,7 @@ public class MeetingService : IMeetingService
         var meetings = await GetUserMeetingsInSpecifiedRange(userIds, desiredRange);
 
         var findTimeRangeForNewMeetingResult =
-            FindTimeRangeForNewMeeting(meetings, desiredRange, newMeetingDurationMinutes);
+            _meetingScheduler.FindTimeRangeForNewMeeting(meetings, desiredRange, newMeetingDurationMinutes);
 
         if (!findTimeRangeForNewMeetingResult.IsSuccess)
             return Result<Meeting>.Failure(findTimeRangeForNewMeetingResult.Error);
@@ -63,7 +65,7 @@ public class MeetingService : IMeetingService
 
         if (missingUsers.Any())
             return Result<List<User>>.Failure(
-                new UserIdsNotFoundError($"users with these ids do not exist", userIds));
+                new UserIdsNotFoundError("users with these ids do not exist", userIds));
 
         return Result<List<User>>.Success(users);
     }
@@ -80,69 +82,5 @@ public class MeetingService : IMeetingService
             .ToListAsync();
 
         return meetings;
-    }
-
-    private Result<MeetingTimeRange> FindTimeRangeForNewMeeting(List<MeetingTimeRange> userMeetings,
-        MeetingTimeRange desiredMeetingTimeRange, int newMeetingDurationMinutes)
-    {
-        var newMeetingTimeRange = new MeetingTimeRange();
-
-        var previousMeetingEndTime = desiredMeetingTimeRange.Start;
-
-        var timeRangeForNewMeetingExists = false;
-
-        foreach (var meeting in userMeetings)
-        {
-            var isDesiredMeetingTimeRangeExceeded =
-                previousMeetingEndTime.AddMinutes(newMeetingDurationMinutes) > desiredMeetingTimeRange.End;
-
-            if (isDesiredMeetingTimeRangeExceeded) break;
-
-            if (meeting.Start >= previousMeetingEndTime)
-            {
-                var minutesBetweenPreviousMeetingEndTimeAndCurrentMeetingStart = (int)Math.Floor(
-                    (meeting.Start - previousMeetingEndTime).Duration().TotalMinutes);
-
-                if (minutesBetweenPreviousMeetingEndTimeAndCurrentMeetingStart >= newMeetingDurationMinutes)
-                {
-                    var spareMinutes = minutesBetweenPreviousMeetingEndTimeAndCurrentMeetingStart -
-                                       newMeetingDurationMinutes;
-                    var threshold = spareMinutes / 2; // threshold to avoid back to back meetings if possible
-
-                    var newMeetingStart = previousMeetingEndTime.AddMinutes(threshold);
-                    var newMeetingEnd = newMeetingStart.AddMinutes(newMeetingDurationMinutes);
-
-                    newMeetingTimeRange = new MeetingTimeRange(newMeetingStart, newMeetingEnd);
-
-                    timeRangeForNewMeetingExists = true;
-                    break;
-                }
-            }
-
-            previousMeetingEndTime = DateTimeMax(previousMeetingEndTime, meeting.End);
-        }
-
-        if (!timeRangeForNewMeetingExists)
-        {
-            var endWindow = desiredMeetingTimeRange.End - previousMeetingEndTime;
-            if (endWindow.TotalMinutes >= newMeetingDurationMinutes)
-            {
-                newMeetingTimeRange = new MeetingTimeRange(previousMeetingEndTime,
-                    previousMeetingEndTime.AddMinutes(newMeetingDurationMinutes));
-                timeRangeForNewMeetingExists = true;
-            }
-        }
-
-        if (!timeRangeForNewMeetingExists)
-            return Result<MeetingTimeRange>.Failure(new Error("no time range was found for meeting"));
-
-        return Result<MeetingTimeRange>.Success(newMeetingTimeRange);
-    }
-
-    private DateTime DateTimeMax(DateTime first, DateTime second)
-    {
-        if (first > second) return first;
-
-        return second;
     }
 }
