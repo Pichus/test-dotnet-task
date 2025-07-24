@@ -25,7 +25,7 @@ public class MeetingSchedulerService : IMeetingSchedulerService
             if (meeting.Start >= previousMeetingEndTime)
             {
                 var minutesBetweenPreviousMeetingEndTimeAndCurrentMeetingStart = (int)Math.Floor(
-                    (meeting.Start - previousMeetingEndTime).Duration().TotalMinutes);
+                    (meeting.Start - previousMeetingEndTime).TotalMinutes);
 
                 if (minutesBetweenPreviousMeetingEndTimeAndCurrentMeetingStart >= newMeetingDurationMinutes)
                 {
