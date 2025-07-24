@@ -27,7 +27,18 @@ public class MeetingController : ControllerBase
         var createMeetingResult = await _meetingService.CreateMeetingIfPossible(request.ParticipantIds,
             new MeetingTimeRange(request.EarliestStart, request.LatestEnd), request.DurationMinutes);
 
-        if (!createMeetingResult.IsSuccess) return BadRequest(createMeetingResult.Error);
+
+        if (!createMeetingResult.IsSuccess)
+        {
+            if (createMeetingResult.Error is UserIdsNotFoundError error)
+            {
+                return NotFound(new {
+                    error.Message,
+                    error.NotFoundUserIds
+                });
+            }
+            return BadRequest(createMeetingResult.Error);
+        }
 
         var meeting = createMeetingResult.Value;
 

@@ -61,11 +61,9 @@ public class MeetingService : IMeetingService
 
         var missingUsers = userIds.Except(existingIds).ToList();
 
-        var missingUsersString = string.Join( ",", missingUsers.ToArray() );
-
         if (missingUsers.Any())
             return Result<List<User>>.Failure(
-                new Error($"users with these ids do not exist: {missingUsersString}"));
+                new UserIdsNotFoundError($"users with these ids do not exist", userIds));
 
         return Result<List<User>>.Success(users);
     }
